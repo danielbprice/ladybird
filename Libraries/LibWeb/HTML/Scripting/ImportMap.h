@@ -13,8 +13,9 @@
 
 namespace Web::HTML {
 
-using ModuleSpecifierMap = HashMap<String, Optional<URL::URL>>;
-using ModuleIntegrityMap = HashMap<URL::URL, String>;
+using ModuleSpecifierMap = OrderedHashMap<String, Optional<URL::URL>>;
+using ModuleIntegrityMap = OrderedHashMap<URL::URL, String>;
+using ScopeMap = OrderedHashMap<URL::URL, ModuleSpecifierMap>;
 
 // https://html.spec.whatwg.org/multipage/webappapis.html#import-map
 class ImportMap {
@@ -25,9 +26,9 @@ public:
     ModuleSpecifierMap& imports() { return m_imports; }
     void set_imports(ModuleSpecifierMap const& imports) { m_imports = imports; }
 
-    HashMap<URL::URL, ModuleSpecifierMap> const& scopes() const { return m_scopes; }
-    HashMap<URL::URL, ModuleSpecifierMap>& scopes() { return m_scopes; }
-    void set_scopes(HashMap<URL::URL, ModuleSpecifierMap> const& scopes) { m_scopes = scopes; }
+    ScopeMap const& scopes() const { return m_scopes; }
+    ScopeMap& scopes() { return m_scopes; }
+    void set_scopes(ScopeMap const& scopes) { m_scopes = scopes; }
 
     ModuleIntegrityMap const& integrity() const { return m_integrity; }
     ModuleIntegrityMap integrity() { return m_integrity; }
@@ -35,14 +36,14 @@ public:
 
 private:
     ModuleSpecifierMap m_imports;
-    HashMap<URL::URL, ModuleSpecifierMap> m_scopes;
+    ScopeMap m_scopes;
     ModuleIntegrityMap m_integrity;
 };
 
 WebIDL::ExceptionOr<ImportMap> parse_import_map_string(JS::Realm& realm, ByteString const& input, URL::URL base_url);
 Optional<FlyString> normalize_specifier_key(JS::Realm& realm, FlyString specifier_key, URL::URL base_url);
 WebIDL::ExceptionOr<ModuleSpecifierMap> sort_and_normalise_module_specifier_map(JS::Realm& realm, JS::Object& original_map, URL::URL base_url);
-WebIDL::ExceptionOr<HashMap<URL::URL, ModuleSpecifierMap>> sort_and_normalise_scopes(JS::Realm& realm, JS::Object& original_map, URL::URL base_url);
+WebIDL::ExceptionOr<ScopeMap> sort_and_normalise_scopes(JS::Realm& realm, JS::Object& original_map, URL::URL base_url);
 WebIDL::ExceptionOr<ModuleIntegrityMap> normalize_module_integrity_map(JS::Realm& realm, JS::Object& original_map, URL::URL base_url);
 void merge_existing_and_new_import_maps(Window&, ImportMap&);
 

@@ -1,0 +1,8 @@
+Harness status: OK
+
+Found 3 tests
+
+3 Pass
+Pass	Resolution after import map should not be redefined
+Pass	Resolution after import map should not be redefined for bare prefixes or exact matches
+Pass	Resolution after import map should be redefined for non-prefixes

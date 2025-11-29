@@ -54,7 +54,7 @@ WebIDL::ExceptionOr<ImportMap> parse_import_map_string(JS::Realm& realm, ByteStr
     }
 
     // 5. Let sortedAndNormalizedScopes be an empty ordered map.
-    HashMap<URL::URL, ModuleSpecifierMap> sorted_and_normalized_scopes;
+    ScopeMap sorted_and_normalized_scopes;
 
     // 6. If parsed["scopes"] exists, then:
     if (TRY(parsed_object.has_property("scopes"_utf16_fly_string))) {
@@ -189,14 +189,22 @@ WebIDL::ExceptionOr<ModuleSpecifierMap> sort_and_normalise_module_specifier_map(
     }
 
     // 3. Return the result of sorting in descending order normalized, with an entry a being less than an entry b if a's key is code unit less than b's key.
-    return normalized;
+    auto keys = normalized.keys();
+    quick_sort(keys, [&](String& a, String& b) { return a > b; });
+
+    ModuleSpecifierMap normalized_sorted;
+    for (auto& key : keys) {
+        auto value = *normalized.get(key);
+        normalized_sorted.set(key, value);
+    }
+    return normalized_sorted;
 }
 
 // https://html.spec.whatwg.org/multipage/webappapis.html#sorting-and-normalizing-scopes
-WebIDL::ExceptionOr<HashMap<URL::URL, ModuleSpecifierMap>> sort_and_normalise_scopes(JS::Realm& realm, JS::Object& original_map, URL::URL base_url)
+WebIDL::ExceptionOr<ScopeMap> sort_and_normalise_scopes(JS::Realm& realm, JS::Object& original_map, URL::URL base_url)
 {
     // 1. Let normalized be an empty ordered map.
-    HashMap<URL::URL, ModuleSpecifierMap> normalized;
+    ScopeMap normalized;
 
     // 2. For each scopePrefix → potentialSpecifierMap of originalMap:
     for (auto& scope_prefix : original_map.shape().property_table().keys()) {
@@ -226,7 +234,15 @@ WebIDL::ExceptionOr<HashMap<URL::URL, ModuleSpecifierMap>> sort_and_normalise_sc
     }
 
     // 3. Return the result of sorting in descending order normalized, with an entry a being less than an entry b if a's key is code unit less than b's key.
-    return normalized;
+    ScopeMap normalized_sorted;
+    auto keys = normalized.keys();
+    quick_sort(keys, [&](URL::URL& a, URL::URL& b) { return a.to_string() > b.to_string(); });
+
+    for (auto& key : keys) {
+        auto value = *normalized.get(key);
+        normalized_sorted.set(key, value);
+    }
+    return normalized_sorted;
 }
 
 // https://html.spec.whatwg.org/multipage/webappapis.html#normalizing-a-module-integrity-map
